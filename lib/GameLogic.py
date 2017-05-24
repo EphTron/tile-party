@@ -33,7 +33,7 @@ class GameLogic:
         :param player_id: int
         :return: player_obj or None
         """
-        if player_id in self.players.keys():
+        if player_id in self.players:
             return self.players[player_id]
         else:
             return None
@@ -44,6 +44,7 @@ class GameLogic:
         :param size: int 
         """
         _level = Level(size)
+        print("added level", _level.id)
         self.levels[_level.get_id()] = _level
 
     def get_level(self, level_id):
@@ -52,7 +53,13 @@ class GameLogic:
         :param level_id: int
         :return: level_obj or None
         """
-        if level_id in self.levels.keys():
+        print(self.levels.keys())
+        print(self.levels)
+        print(type(level_id))
+
+        if level_id in self.levels:
+            print("level", self.levels[level_id])
             return self.levels[level_id]
         else:
+            print("error")
             return None

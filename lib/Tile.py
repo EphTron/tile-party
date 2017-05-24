@@ -21,6 +21,7 @@ class Tile:
         Tile.instances += 1
 
         self.level = level_obj
+        self.level_id = level_obj.get_id()
         self.position = (x, y)
         self.neighbours = {"up": None,
                            "down": None,
@@ -39,7 +40,7 @@ class Tile:
         :return: json format 
         """
         json = {"id": self.id,
-                "level_id": self.level.get_id(),
+                "level_id": self.level_id,
                 "position": self.position,
                 "neighbour_ids": self.neighbour_ids
                 }

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tile |
+        {% if tile != None %}
+            {{tile.level_id}} |
+            {{tile.id}}
+        {% end %}
+    </title>
+</head>
+
+<body>
+    {% if tile != None %}
+        {% for key, neighbour in tile.neighbours.items() %}
+            {% if neighbour != None %}
+                <a href="http://localhost:8888/labyrinth/{{tile.level_id}}/{{neighbour.id}}">
+                    {{key}}
+                </a>
+            {% end %}
+        {% end %}
+    {% end %}
+</body>
+</html>

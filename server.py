@@ -45,18 +45,24 @@ class GameHandler(BaseHandler):
         command = self.get_argument('command', '')
 
         if command == "start":
-            self.redirect(u"/labyrinth/0")
-
-        self.redirect(u"/")
+            self.redirect(u"/labyrinth/0/0")
+        else:
+            self.redirect(u"/")
 
 
 class LabyrinthHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self, level_id, tile_id):
+        level_id = int(level_id)
+        tile_id = int(tile_id)
+        print("parameters: ", level_id, tile_id)
         _current_level = self.logic.get_level(level_id)
+        print(_current_level)
         _current_tile = _current_level.get_tile(tile_id)
 
-        self.render("labyrinth.html", tile=_current_tile.to_json())
+        self.render("labyrinth.html",
+                    tile=_current_tile,
+                    tile_json=_current_tile.to_json())
 
 
 class LoginHandler(BaseHandler):
@@ -94,7 +100,7 @@ class GameApp(tornado.web.Application):
             (r"/", GameHandler, dict(logic=logic)),
             (r"/login", LoginHandler, dict(logic=logic)),
             (r"/logout", LogoutHandler, dict(logic=logic)),
-            (r"/labyrinth/([^/]*)", LabyrinthHandler, dict(logic=logic))
+            (r"/labyrinth/([^/]*)/([^/]*)", LabyrinthHandler, dict(logic=logic))
         ]
 
         # create random + safe cookie_secret key
@@ -116,4 +122,3 @@ if __name__ == "__main__":
     app.listen(options.port)
 
     tornado.ioloop.IOLoop.current().start()
-

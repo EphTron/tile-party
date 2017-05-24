@@ -17,6 +17,8 @@
             <form action="" method="post">
                 Logged in as:
                 <p>{{current_user}}</p><br>
+                <input type="hidden" name="command" value="start">
+                <button type="submit" name="start">Start</button>
                 {% module xsrf_form_html() %}
             </form>
         </div>

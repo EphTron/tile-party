@@ -4,24 +4,25 @@
     <meta charset="UTF-8">
     <title>Login</title>
 
-     <link href= {{ static_url("css/game-style.css") }} rel="stylesheet" type="text/css">
+    <link href={{ static_url(
+    "css/game-style.css") }} rel="stylesheet" type="text/css">
 </head>
 <body>
-    <div id="header">
-        <h3 >Tile Party</h3>
+<div id="header">
+    <h3>Tile Party</h3>
+</div>
+<div id="content">
+    <div>
+        <form action="" method="post">
+            Name:<br>
+            <input type="text" name="player_name" value=""><br><br>
+            <button type="submit" name="start">Start</button>
+            {% module xsrf_form_html() %}
+        </form>
     </div>
-    <div id="content" >
-        <div>
-            <form action="" method="post">
-                Name:<br>
-                <input type="text" name="player_name" value=""><br><br>
-                <button type="submit" name="start">Start</button>
-                {% module xsrf_form_html() %}
-            </form>
-        </div>
-    </div>
-    <div id="footer" >
-        <div >Enjoy</div>
-    </div>
+</div>
+<div id="footer">
+    <div>Enjoy</div>
+</div>
 </body>
 </html>
