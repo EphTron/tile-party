@@ -16,6 +16,18 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+function process_old_events(val)
+{
+    // test = "{ 'players' :"+val +"}";
+    console.log("received: ",val);
+    // console.log("test to json",test);
+
+    //check = eval("(" + val + ")");
+    //console.log("c1:", check);
+    check2 = JSON.parse(val);
+    console.log("c2:", check2);
+}
+
 $(document).ready(function () {
     if (!window.console) window.console = {};
     if (!window.console.log) window.console.log = function () {
@@ -32,6 +44,9 @@ $(document).ready(function () {
         }
         return true;
     });
+
+
+
     $("#event").select();
     updater.poll();
 });
@@ -102,7 +117,16 @@ var updater = {
             url: "/event/update", type: "POST", dataType: "text",
             data: $.param(args),
             success: updater.onSuccess,
-            error: updater.onError
+            error: function(xhr, status, error, exception) {
+                console.log("response"+xhr.responseText);
+                var err = eval("(" + xhr.responseText + ")");
+                console.log(err);
+                // alert('Exeption:'+exception);
+                console.log('Status:'+status);
+                console.log('error:'+ error);
+                console.log('exception:'+ exception);}
+
+            //updater.onError
         });
     },
 
@@ -112,7 +136,8 @@ var updater = {
         try {
             updater.newEvents(response_json);
         } catch (e) {
-            updater.onError();
+            console.log("yes", e);
+            updater.onError2();
             return;
         }
         updater.errorSleepTime = 500;
@@ -122,6 +147,13 @@ var updater = {
     onError: function (response) {
         updater.errorSleepTime *= 2;
         console.log("Error with response:", response);
+        console.log("Poll error; sleeping for", updater.errorSleepTime, "ms");
+        window.setTimeout(updater.poll, updater.errorSleepTime);
+    },
+
+    onError2: function (response) {
+        updater.errorSleepTime *= 2;
+        console.log("Error (#2) with response:", response);
         console.log("Poll error; sleeping for", updater.errorSleepTime, "ms");
         window.setTimeout(updater.poll, updater.errorSleepTime);
     },
@@ -145,7 +177,7 @@ var updater = {
     showEvent: function (event_json) {
         console.log("Show Events:", event_json);
         var text = document.createElement("div");
-        text.innerHTML = event_json.body;
+        text.innerHTML = event_json.player + ": " + event_json.body;
         $("#event-log").append(text);
     }
 };
