@@ -9,6 +9,7 @@ import json
 import os.path
 import base64, uuid
 
+import tornado.escape
 import tornado.web
 import tornado.ioloop
 
@@ -56,15 +57,24 @@ class GameHandler(BaseHandler):
 class LabyrinthHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self, level_id, tile_id):
+        print("Laby received get")
         level_id = int(level_id)
         tile_id = int(tile_id)
 
         _current_level = self.logic.get_level(level_id)
         _current_tile = _current_level.get_tile(tile_id)
         print("logic event cache:", self.logic.event_cache)
+        print("logic event cache size:", len(self.logic.event_cache))
         # Todo: only works when the cursors of all clients are the same - simple fix: check length
-        # if len(self.logic.event_cache) > 0:
-        _event_cache_json = dict(self.logic.event_cache)
+        # if len(self.logic.event_cache) > 1:
+        #     _event_cache_json = dict(self.logic.event_cache[0])
+        # else:
+        #     _event_cache_json = dict(self.logic.event_cache)
+        _event_cache_json = json.dumps(self.logic.event_cache)
+        #_event_cache_json = tornado.escape.json_encode(_event_cache_json)
+        # _events_json = self.logic.event_cache
+        # print(_events_json)
+        # _event_cache_json = _event_cache_json.decode('utf-8')
 
         self.render("labyrinth.html",
                     tile=_current_tile,
@@ -74,6 +84,7 @@ class LabyrinthHandler(BaseHandler):
 
 class NewEventHandler(BaseHandler):
     def post(self):
+        print("NewEventHandler received post")
         event = {
             "id": str(uuid.uuid4()),
             "body": self.get_argument("body"),
@@ -95,20 +106,25 @@ class NewEventHandler(BaseHandler):
 class EventUpdateHandler(BaseHandler):
     @gen.coroutine
     def post(self):
+        print("EventUpdateHandler received post")
         cursor = self.get_argument("cursor", None)
-        print("cursor out: ", cursor)
+        # print("cursor out: ", cursor)
         # Save the future returned by wait_for_events so we can cancel it in wait_for_events
         self.future = self.logic.wait_for_events(cursor=cursor)
         events = yield self.future
         if self.request.connection.stream.closed():
-            return
-        print("events:", events)
+            print("closed")
+            # return {"hello"}
+            self.write({'status':'ok'})
+        # print("events:", events)
         json = dict(events=events)
         print("Sending json event:", json)
         self.write(json)
 
     def on_connection_close(self):
+        print("closed connection")
         self.logic.cancel_wait(self.future)
+        # self.finish()
 
 
 class LoginHandler(BaseHandler):
