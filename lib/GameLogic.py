@@ -57,7 +57,7 @@ class GameLogic:
         :return: 
         """
         self.waiters.remove(future)
-        future.set_result([])
+        future.set_result("test")
 
     def new_event(self, event_list):
         """
@@ -126,12 +126,8 @@ class GameLogic:
         :param level_id: int
         :return: level_obj or None
         """
-        print(self.levels.keys())
-        print(self.levels)
-        print(type(level_id))
-
         if level_id in self.levels:
-            print("level", self.levels[level_id])
+
             return self.levels[level_id]
         else:
             print("error")
