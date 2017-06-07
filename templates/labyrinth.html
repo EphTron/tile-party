@@ -12,6 +12,7 @@
 </head>
 
 <body>
+    <div id="directions">
     {% if tile != None %}
         {% for key, neighbour in tile.neighbours.items() %}
             {% if neighbour != None %}
@@ -21,12 +22,19 @@
             {% end %}
         {% end %}
     {% end %}
+    </div>
     <div id="event-log">
-
-        {{events}}
-        {% for event in events %}
-            <p>{{event}}</p>
+    </div>
+    <div id="players">
+    {% if tile != None %}
+        {% for player_id, player in tile.players.items() %}
+            {% if player != None %}
+                <p>
+                    {{player.name}}
+                </p>
+            {% end %}
         {% end %}
+    {% end %}
     </div>
     <form action="/event/new" method="post" id="eventform">
         <input type="text" name="body" id="event" style="width:500px">
