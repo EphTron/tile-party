@@ -39,8 +39,8 @@ class GameLogic:
         result_future = Future()
         if cursor:
             new_count = 0
-            for msg in reversed(self.event_cache):
-                if msg["id"] == cursor:
+            for event in reversed(self.event_cache):
+                if event.id == cursor:
                     break
                 new_count += 1
             if new_count:
@@ -57,12 +57,12 @@ class GameLogic:
         :return: 
         """
         self.waiters.remove(future)
-        future.set_result("test")
+        future.set_result([])
 
     def new_event(self, event_list):
         """
         Creates new events and 
-        :param event: event_obj
+        :param event_list: list of event_obj
         :return: 
         """
         logging.info("Sending new message to %r listeners", len(self.waiters))
@@ -84,7 +84,8 @@ class GameLogic:
         :param player_name: str 
         """
         _player = Player(player_name)
-        self.players[_player.get_id()] = Player
+        self.players[_player.get_id()] = _player
+        return _player.get_id()
 
     def remove_player(self, player_name=None, player_id=None):
         """
@@ -107,9 +108,18 @@ class GameLogic:
         :return: player_obj or None
         """
         if player_id in self.players:
+            print(player_id, " in ", self.players)
             return self.players[player_id]
         else:
+            print(player_id, " not in ", self.players)
             return None
+
+    def get_players(self):
+        """
+        Return the dictonary with all players
+        :return: 
+        """
+        return self.players
 
     def create_level(self, size):
         """
