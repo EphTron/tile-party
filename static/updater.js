@@ -16,10 +16,16 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-function process_old_events(val)
-{
+
+// class LoggedPlayerLogic{
+//     constructor(players, width) {
+//     this.players = players;
+//   }
+// }
+
+function process_old_events(val) {
     // test = "{ 'players' :"+val +"}";
-    console.log("received: ",val);
+    console.log("received: ", val);
     // console.log("test to json",test);
 
     //check = eval("(" + val + ")");
@@ -44,7 +50,6 @@ $(document).ready(function () {
         }
         return true;
     });
-
 
 
     $("#event").select();
@@ -117,14 +122,14 @@ var updater = {
             url: "/event/update", type: "POST", dataType: "text",
             data: $.param(args),
             success: updater.onSuccess,
-            error: function(xhr, status, error, exception) {
-                console.log("response"+xhr.responseText);
-                var err = eval("(" + xhr.responseText + ")");
-                console.log(err);
+            error: function (xhr, status, error, exception) {
+                console.log("response" + xhr.responseText);
+                // var err = eval("(" + xhr.responseText + ")");
                 // alert('Exeption:'+exception);
-                console.log('Status:'+status);
-                console.log('error:'+ error);
-                console.log('exception:'+ exception);}
+                console.log('Status:' + status);
+                console.log('error:' + error);
+                console.log('exception:' + exception);
+            }
 
             //updater.onError
         });
@@ -137,7 +142,7 @@ var updater = {
             updater.newEvents(response_json);
         } catch (e) {
             console.log("yes", e);
-            updater.onError2();
+            updater.onError();
             return;
         }
         updater.errorSleepTime = 500;
@@ -146,15 +151,8 @@ var updater = {
 
     onError: function (response) {
         updater.errorSleepTime *= 2;
-        console.log("Error with response:", response);
-        console.log("Poll error; sleeping for", updater.errorSleepTime, "ms");
-        window.setTimeout(updater.poll, updater.errorSleepTime);
-    },
-
-    onError2: function (response) {
-        updater.errorSleepTime *= 2;
-        console.log("Error (#2) with response:", response);
-        console.log("Poll error; sleeping for", updater.errorSleepTime, "ms");
+        // console.log("Error with response:", response);
+        // console.log("Poll error; sleeping for", updater.errorSleepTime, "ms");
         window.setTimeout(updater.poll, updater.errorSleepTime);
     },
 
@@ -176,8 +174,14 @@ var updater = {
 
     showEvent: function (event_json) {
         console.log("Show Events:", event_json);
+
+        // Todo: process events according to the given informations -> check Event.py, also adjust <div> to <p>...
         var text = document.createElement("div");
-        text.innerHTML = event_json.player + ": " + event_json.body;
-        $("#event-log").append(text);
+        text.innerHTML = event_json.sender_name + ": " + event_json.body;
+        if (event_json.type === 'player-entered') {
+            $("#players").append(text);
+        } else if (event_json.type === 'message') {
+            $("#event-log").append(text);
+        }
     }
 };
