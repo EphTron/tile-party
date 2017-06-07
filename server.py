@@ -12,11 +12,13 @@ import base64, uuid
 import tornado.escape
 import tornado.web
 import tornado.ioloop
+from sqlalchemy.orm.collections import _PlainColumnGetter
 
 from tornado import gen
 from tornado.options import define, options
 
 from lib.GameLogic import GameLogic
+from lib.Event import PlayerEnterEvent, MessageEvent, GenericEvent
 
 define("port", default=8888, help="run on the given port", type=int)
 define("debug", default=False, help="run in debug mode")
@@ -27,16 +29,28 @@ class BaseHandler(tornado.web.RequestHandler):
         self.logic = logic
 
     def get_current_user(self):
-        player_name = self.get_secure_cookie("player")
-        if player_name:
-            return player_name
+        _player_name = self.get_secure_cookie("player")
+        if _player_name is not None:
+            return _player_name.decode('utf-8')
+
+    def get_current_player_obj(self):
+        _player_id = self.get_secure_cookie("player_id")
+
+        if _player_id is not None:
+            _player_id = int(_player_id.decode('utf-8'))
+            if _player_id in self.logic.players:
+                _player = self.logic.get_player(_player_id)
+                if _player:
+                    return _player
 
     def set_current_user(self, player_name):
         if player_name:
             self.set_secure_cookie("player", player_name)
-            self.logic.create_player(player_name)
+            _player_id = self.logic.create_player(player_name)
+            self.set_secure_cookie("player_id", str(_player_id))
         else:
             self.clear_cookie("player")
+            self.clear_cookie("player_id")
 
 
 class GameHandler(BaseHandler):
@@ -46,9 +60,9 @@ class GameHandler(BaseHandler):
 
     @tornado.web.authenticated
     def post(self):
-        command = self.get_argument('command', '')
+        _command = self.get_argument('command', '')
 
-        if command == "start":
+        if _command == "start":
             self.redirect(u"/labyrinth/0/0")
         else:
             self.redirect(u"/")
@@ -57,24 +71,25 @@ class GameHandler(BaseHandler):
 class LabyrinthHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self, level_id, tile_id):
-        print("Laby received get")
         level_id = int(level_id)
         tile_id = int(tile_id)
 
+        # get current level and tile
         _current_level = self.logic.get_level(level_id)
         _current_tile = _current_level.get_tile(tile_id)
-        print("logic event cache:", self.logic.event_cache)
-        print("logic event cache size:", len(self.logic.event_cache))
-        # Todo: only works when the cursors of all clients are the same - simple fix: check length
-        # if len(self.logic.event_cache) > 1:
-        #     _event_cache_json = dict(self.logic.event_cache[0])
-        # else:
-        #     _event_cache_json = dict(self.logic.event_cache)
-        _event_cache_json = json.dumps(self.logic.event_cache)
-        #_event_cache_json = tornado.escape.json_encode(_event_cache_json)
-        # _events_json = self.logic.event_cache
-        # print(_events_json)
-        # _event_cache_json = _event_cache_json.decode('utf-8')
+
+        # get player and add her to the current tile
+        _player = self.get_current_player_obj()
+        print("player: ", _player)
+        _current_tile.player_enters(_player)
+        _player.set_current_tile(_current_tile)
+
+        # create player-joined event
+        # Todo: only send enter event when player really enters, not on refresh
+        _event = PlayerEnterEvent(_player.name)
+        self.logic.new_event([_event])
+
+        _event_cache_json = json.dumps([event.to_json() for event in self.logic.event_cache])
 
         self.render("labyrinth.html",
                     tile=_current_tile,
@@ -84,23 +99,20 @@ class LabyrinthHandler(BaseHandler):
 
 class NewEventHandler(BaseHandler):
     def post(self):
-        print("NewEventHandler received post")
-        event = {
-            "id": str(uuid.uuid4()),
-            "body": self.get_argument("body"),
-        }
-        if self.get_current_user():
-            event["player"] = self.get_current_user().decode('utf-8')
+        _player = self.get_current_player_obj()
+        if _player:
+            _event = MessageEvent(self.get_argument("body"), _player.get_name())
+            # old code: _event["player"] = self.get_current_user().decode('utf-8')
 
         # to_basestring is necessary for Python 3's json encoder, which doesn't accept byte strings.
         if self.get_argument("next", None):
             print("get next", self.get_argument("next"))
             self.redirect(self.get_argument("next"))
         else:
-            _event_json = dict(event)
+            _event_json = _event.to_json()
             print("Writing:", _event_json)
             self.write(_event_json)
-        self.logic.new_event([event])
+        self.logic.new_event([_event])
 
 
 class EventUpdateHandler(BaseHandler):
@@ -114,17 +126,19 @@ class EventUpdateHandler(BaseHandler):
         events = yield self.future
         if self.request.connection.stream.closed():
             print("closed")
-            # return {"hello"}
-            self.write({'status':'ok'})
-        # print("events:", events)
-        json = dict(events=events)
-        print("Sending json event:", json)
-        self.write(json)
+            return
+            # self.write({'status':'ok'})
+        print("my yielded events", events)
+        events_json = json.dumps({"events":[event.to_json() for event in events]})
+
+        # json = dict(events=events)
+        # _event_cache_json = json.dumps(self.logic.event_cache)
+        print("Sending json event:", events_json)
+        self.write(events_json)
 
     def on_connection_close(self):
         print("closed connection")
         self.logic.cancel_wait(self.future)
-        # self.finish()
 
 
 class LoginHandler(BaseHandler):
