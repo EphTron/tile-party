@@ -34,6 +34,8 @@ class Tile:
                               "right": None
                               }
 
+        self.players = {}
+
     def to_json(self):
         """
         Creates class specific json encode file
@@ -42,7 +44,8 @@ class Tile:
         json = {"id": self.id,
                 "level_id": self.level_id,
                 "position": self.position,
-                "neighbour_ids": self.neighbour_ids
+                "neighbour_ids": self.neighbour_ids,
+                "player_ids": [player_id for player_id, player in self.players.items()]
                 }
         print("json repr:", json)
         return json
@@ -102,3 +105,14 @@ class Tile:
             self.neighbour_ids['left'] = n_left.get_id()
         if n_right is not None:
             self.neighbour_ids['right'] = n_right.get_id()
+
+    def player_enters(self, player_obj):
+        if player_obj:
+            self.players[player_obj.get_id()] = player_obj
+
+    def player_leaves(self, player_obj):
+        if player_obj:
+            if player_obj.id in self.players:
+                del self.player[player_obj.id]
+
+
